@@ -1,0 +1,17 @@
+name: "banco-de-dados-pd"
+navbar:
+  title: "Análises"
+  left:
+    - text: "Depression data"
+      href: 01c_visualize_depression_final.html
+      icon: fa-sad-tear
+    - text: "Sleep and depression data"
+      href: 03c_vizualize_sleep_depression.html
+      icon: fa-bed
+output: 
+  html_document:
+    theme: flatly
+    code_folding: hide
+    toc: true
+    toc_float: true 
+    df_print: paged

@@ -1,0 +1,253 @@
+---
+title: "Sleep and depression data"
+author: "Ana"
+date: "11/02/2021"
+output: html_document
+---
+
+
+```{r message = FALSE, include=FALSE}
+library(tidyverse)
+source("../helper_functions.R")
+library(RColorBrewer)
+```
+
+#Tabela sleep depression
+```{r echo=F}
+sleep_depression <- readRDS("../Data/Processed/df_sleep_depression")
+
+sleep_depression <- sleep_depression %>% 
+  filter(PRIMDIAG %in% c("Idiopathic Parkinson's Disease", "Healthy"))
+
+sleep_depression
+```
+
+# Depression rate in patients with idiopathic PD
+
+> Does PD patients present a higher rates of depression vs. healthy patients? 
+>
+> -Yes:   Depression: PD = 17,98% x Healthy = 4,8%
+
+```{r echo = FALSE}
+healthy_vs_depressive <- sleep_depression %>%
+  select(PATNO, year, depressive_status, depression_category, PRIMDIAG) %>%
+  mutate(PRIMDIAG = factor(x = PRIMDIAG,
+                           levels = c("Idiopathic Parkinson's Disease",
+                                      "Healthy"))) %>%
+  mutate(depression_category = factor(x = depression_category,
+                                      levels = c("Severe depression", 
+                                                 "Moderate depression",
+                                                 "Mild depression",
+                                                 "Normal"))) %>%
+  count(depression_category,PRIMDIAG) %>%
+  group_by(PRIMDIAG) %>%
+  mutate(perc_pd_depression = n/sum(n) *100) 
+
+healthy_vs_depressive %>% 
+  ggplot(aes(x = depression_category, 
+             y = perc_pd_depression, 
+             fill = PRIMDIAG)) +
+  geom_col(position = position_dodge()) +
+  geom_label(aes(label = round(perc_pd_depression, 2) %>%  paste0(. , "%")),
+             position = position_dodge(width = 0.9),
+             hjust = 0,
+             fontface = "bold",
+             label.size = 0,
+             alpha = 0,
+             size = 2.5,
+             show.legend = FALSE) +
+  scale_fill_manual(values = safe_colorblind_palette) +
+  scale_x_discrete(labels = c("Severe depression", "Moderate depression", "Mild depression", "Non depressive")) +
+  theme_classic() +
+  labs(title = str_wrap(string = "Depression rate in Parkinson's disease patients",
+                        width = 60),
+       subtitle = str_wrap(string = "Higher percentage of depression in Parkinson's disease patients",
+                           width = 40),
+       x = "Depression Severity",
+       y = "%",
+       fill = "") +
+  ylim(0,100) +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  size = 12,
+                                  face = "bold",
+                                  margin = margin(0,0,5,0)),
+        plot.subtitle = element_text(hjust = 0.5, 
+                                     size = 11,
+                                  margin = margin(0,0,30,0)),
+        axis.text = element_text(size = 10),
+        axis.title.y = element_text(size = 10,
+                                    margin = margin(0,15,0,0)),
+        axis.title.x = element_text(size = 10,
+                                    margin = margin(10,0,0,0)),
+        legend.position = "right",
+        legend.justification = "center",
+        legend.margin = margin(0,0,0,30)) +
+  coord_flip()
+```
+
+# Depressive status in PD patients
+
+> PD is associated with lower percentage of patients in the constant healthy groups compared with healthy patients
+>
+> Higher percentage of depression in PD patients is associated with:
+>
+> -   higher percentage of PD patients whom became depressive during the analysis, compared with healthy patients
+>
+> -   higher percentage of PD whom became healthy - "cured", compared with healthy patients
+>
+> -   higher levels of constant depression throughout the analysis, compared with healthy patients (although the percentage is lower compared with the other categories from the depression spectrum)
+
+```{r echo = FALSE}
+sleep_depression %>% 
+  select(PATNO, year, depressive_status, depression_category, PRIMDIAG) %>% 
+  filter(depressive_status != "single_data") %>% 
+  # mutate(PRIMDIAG = factor(x = PRIMDIAG,
+  #                          levels = c("17",
+  #                                     "01"))) %>% 
+  mutate(depressive_status = factor(x = depressive_status,
+                                    levels = c("constant_healthy",
+                                               "constant_depressive",
+                                               "became_healthy",
+                                               "became_depressive"))) %>%
+  count(depressive_status,PRIMDIAG) %>% 
+  group_by(PRIMDIAG) %>% 
+  mutate(perc_pd_depression_status = n/sum(n) *100) %>% 
+  ggplot(aes(x = depressive_status,
+             y = perc_pd_depression_status,
+             fill = PRIMDIAG)) +
+  geom_col(position = position_dodge()) +
+  geom_label(aes(label = round(perc_pd_depression_status, 2) %>% paste0(. , "%")),
+             position = position_dodge(width = 0.9), 
+              hjust = 0,
+              fontface = "bold",
+              label.size = 0,
+              alpha = 0,
+              size = 2.5,
+             show.legend = FALSE) +
+  scale_fill_manual(values = safe_colorblind_palette) +
+  scale_x_discrete(labels = c("Constant healthy",
+                              "Constant depressive",
+                              "Became healthy",
+                              "Became depressive")) +
+  labs(title = "Depressive timeline in Parkinson's disease patients",
+       x = "",
+       y = "%",
+       fill = "") +
+  ylim(0,100) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  margin = margin(0,0,30,0)),
+        axis.text = element_text(colour = "black",
+                                 size = 10),
+        axis.title = element_text(face = "bold",
+                                  size = 12)) +
+  coord_flip()
+```
+
+# Daytime sleepiness classification in depressive patients
+
+```{r echo = FALSE}
+sleep_depression %>% 
+  select(PATNO, depressive, category_2) %>%
+  count(depressive, category_2) %>%
+  group_by(depressive) %>% 
+  mutate(perc_depressive_sleep = n/sum(n) * 100) %>% 
+  ggplot(aes(x = category_2,
+             y = perc_depressive_sleep,
+             fill = depressive)) +
+  geom_col(position = position_dodge()) +
+  geom_label(aes(label = round(perc_depressive_sleep, 2) %>% paste0(. , "%")),
+             position = position_dodge(width = 0.9),
+             hjust = 0,
+             fontface = "bold",
+             label.size = 0,
+             alpha = 0,
+             size = 2.5,
+             show.legend = FALSE) +
+  scale_y_continuous(limits = c(0,100)) +
+  scale_fill_brewer(palette = "Dark2",
+                    labels = c("Non depressive",
+                               "Depressive")) +
+  scale_x_discrete(labels = c("Lower Normal Daytime Sleepiness", 
+                              "Higher Normal Daytime Sleepiness",
+                              "Mild Excessive Daytime Sleepiness",
+                              "Moderate Excessive Daytime Sleepiness",
+                              "Severe Excessive Daytime Sleepiness")) +
+  labs(title = "Daytime sleepiness in depressive patients",
+       subtitle = str_wrap(string = "Higher excessive daytime slepiness in depressive patients",
+                           width = 40),
+       x = "",
+       y = "%",
+       fill = "") +
+  theme_classic() +
+  theme(legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, 
+                                  margin = margin(0,0,10,0),
+                                  size = 12,
+                                  face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, 
+                                     margin = margin(0,0,20,0),
+                                     size = 11),
+        axis.text = element_text(colour = "black",
+                                 size = 10),
+        axis.title = element_text(size = 10)) +
+  coord_flip()
+ 
+```
+
+# Daytime sleepiness classification in constant depressive patients
+
+```{r echo = FALSE}
+sleep_depression %>% 
+  filter(depressive_status == c("constant_healthy", "constant_depressive")) %>%
+  mutate(depressive_status = factor(x = depressive_status,
+                                    levels = c("constant_healthy",
+                                               "constant_depressive"))) %>% 
+  count(depressive_status, category_2) %>% 
+  group_by(depressive_status) %>% 
+  mutate(percentage_ess_depressive = n/sum(n) *100) %>% 
+   ggplot(aes(x = category_2, 
+              y = percentage_ess_depressive,
+              fill = depressive_status)) +
+  geom_col(position = position_dodge()) +
+  geom_label(aes(label = round(percentage_ess_depressive, 2) %>% paste0(. , "%")),
+             position = position_dodge(width = 0.9),
+             hjust = 0,
+             fontface = "bold",
+             label.size = 0,
+             alpha = 0,
+             size = 3,
+             show.legend = FALSE) +
+  scale_y_continuous(limits = c(0,100)) +
+  scale_x_discrete(labels = c("Lower Normal Daytime Sleepiness", 
+                              "Higher Normal Daytime Sleepiness",
+                              "Mild Excessive Daytime Sleepiness",
+                              "Moderate Excessive Daytime Sleepiness",
+                              "Severe Excessive Daytime Sleepiness")) +
+  scale_fill_brewer(palette = "Dark2",
+                    labels = c("Constant healthy",
+                             "Constante depressive")) +
+ labs(title = str_wrap(string = "Daytime sleepiness classification in constant depressive patients",
+                       width = 35),
+     subtitle = str_wrap(string = "Patients with depression during all the analysis showed higher rates of excessive daytime sleepiness",
+                         width = 60),
+       x = "",
+       y = "%",
+       fill = "") +
+  theme_classic() +
+  theme(legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, 
+                                  margin = margin(0,0,10,0),
+                                  size = 15,
+                                  face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, 
+                                  margin = margin(0,0,30,0),
+                                  size = 12),
+        axis.text = element_text(colour = "black",
+                                 size = 10),
+        axis.title = element_text(face = "bold",
+                                  size = 10)) +
+  coord_flip()
+```
+```
+

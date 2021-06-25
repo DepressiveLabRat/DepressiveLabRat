@@ -1,0 +1,9 @@
+---
+title: "Parkinson's analysis"
+---
+
+Navegue na abas para visualizar as análises do banco de dados Parkinson’s Progression Markers Initiative (PPMI)
+
+* Depression data: referente as análises dos dados do questionário Geriatric Depression Scale (GDS) 
+
+* Sleep and depression data: referente as análises do questionário de sonolência diurna "Epworth sleepiness scale" que foram relacionados com os dados de depressão (GDS) e com diagnóstico de doença de Parkinson idiopática.
